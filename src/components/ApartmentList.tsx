@@ -24,6 +24,7 @@ export default function ApartmentList({ apartments, selectedId, onSelect }: Apar
     <ul className="divide-y divide-slate-100">
       {apartments.map((apt) => {
         const meta = STATUS_META[apt.status];
+        const cover = apt.photos?.[0];
         return (
           <li key={apt.id}>
             <button
@@ -33,10 +34,21 @@ export default function ApartmentList({ apartments, selectedId, onSelect }: Apar
                 apt.id === selectedId && "bg-brand-50 hover:bg-brand-50",
               )}
             >
-              <span
-                className="mt-0.5 w-1 shrink-0 rounded-full"
-                style={{ backgroundColor: meta.color }}
-              />
+              {cover ? (
+                <span className="relative h-14 w-14 shrink-0 self-center overflow-hidden rounded-lg bg-slate-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cover} alt="" className="h-full w-full object-cover" />
+                  <span
+                    className="absolute inset-x-0 bottom-0 h-1"
+                    style={{ backgroundColor: meta.color }}
+                  />
+                </span>
+              ) : (
+                <span
+                  className="mt-0.5 w-1 shrink-0 rounded-full"
+                  style={{ backgroundColor: meta.color }}
+                />
+              )}
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
                   <span className="truncate font-medium text-slate-800">

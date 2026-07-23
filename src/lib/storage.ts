@@ -46,7 +46,9 @@ class LocalStore implements ApartmentStore {
   }
 
   async list(): Promise<Apartment[]> {
-    return this.read().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return this.read()
+      .map((a) => ({ ...a, photos: Array.isArray(a.photos) ? a.photos : [] }))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   async create(input: ApartmentInput): Promise<Apartment> {
@@ -90,6 +92,7 @@ function rowToApartment(row: Record<string, any>): Apartment {
     whatsapp: row.whatsapp ?? "",
     notes: row.notes ?? "",
     appointmentAt: row.appointment_at ?? null,
+    photos: Array.isArray(row.photos) ? row.photos : [],
     bedrooms: row.bedrooms === null || row.bedrooms === undefined ? null : Number(row.bedrooms),
     sizeSqm: row.size_sqm === null || row.size_sqm === undefined ? null : Number(row.size_sqm),
     createdAt: row.created_at,
@@ -109,6 +112,7 @@ function inputToRow(input: Partial<ApartmentInput>): Record<string, unknown> {
   if (input.whatsapp !== undefined) row.whatsapp = input.whatsapp;
   if (input.notes !== undefined) row.notes = input.notes;
   if (input.appointmentAt !== undefined) row.appointment_at = input.appointmentAt;
+  if (input.photos !== undefined) row.photos = input.photos;
   if (input.bedrooms !== undefined) row.bedrooms = input.bedrooms;
   if (input.sizeSqm !== undefined) row.size_sqm = input.sizeSqm;
   return row;

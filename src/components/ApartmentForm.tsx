@@ -6,6 +6,7 @@ import type { ApartmentInput } from "@/lib/types";
 import { APARTMENT_STATUSES, STATUS_META } from "@/lib/types";
 import { toLocalInputValue, fromLocalInputValue } from "@/lib/utils";
 import AddressSearch from "./AddressSearch";
+import PhotoInput from "./PhotoInput";
 
 interface ApartmentFormProps {
   mode: "add" | "edit";
@@ -202,6 +203,10 @@ export default function ApartmentForm({
               value={toLocalInputValue(form.appointmentAt)}
               onChange={(e) => set("appointmentAt", fromLocalInputValue(e.target.value))}
             />
+          </Field>
+
+          <Field label="Photos">
+            <PhotoInput photos={form.photos} onChange={(photos) => set("photos", photos)} />
           </Field>
 
           <Field label="Notes">

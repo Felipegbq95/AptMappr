@@ -21,6 +21,7 @@ create table if not exists public.apartments (
   whatsapp       text not null default '',
   notes          text not null default '',
   appointment_at timestamptz,
+  photos         text[] not null default '{}',
   bedrooms       integer,
   size_sqm       numeric,
   created_at     timestamptz not null default now(),
@@ -66,3 +67,37 @@ drop policy if exists "own apartments – delete" on public.apartments;
 create policy "own apartments – delete"
   on public.apartments for delete
   using (auth.uid() = user_id);
+
+-- If you created the table before photos existed, this adds the column safely.
+alter table public.apartments
+  add column if not exists photos text[] not null default '{}';
+
+-- ===========================================================================
+-- Storage: apartment photos (optional, enables photo uploads in cloud mode)
+--
+-- 1. In the Supabase dashboard: Storage → New bucket → name it
+--    "apartment-photos" and mark it PUBLIC (photos are served by URL).
+-- 2. Then run the policies below so each signed-in user can upload/manage
+--    only files inside their own "<user-id>/..." folder.
+-- ===========================================================================
+
+drop policy if exists "apartment photos – public read" on storage.objects;
+create policy "apartment photos – public read"
+  on storage.objects for select
+  using (bucket_id = 'apartment-photos');
+
+drop policy if exists "apartment photos – user upload" on storage.objects;
+create policy "apartment photos – user upload"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'apartment-photos'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "apartment photos – user delete" on storage.objects;
+create policy "apartment photos – user delete"
+  on storage.objects for delete
+  using (
+    bucket_id = 'apartment-photos'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

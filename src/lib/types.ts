@@ -40,6 +40,8 @@ export interface Apartment {
   notes: string;
   /** ISO date-time of the viewing appointment, if any. */
   appointmentAt: string | null;
+  /** Photo URLs (remote links, or downscaled data URLs in local mode). */
+  photos: string[];
   /** Optional extra structured fields shown in the detail panel. */
   bedrooms: number | null;
   sizeSqm: number | null;
@@ -78,6 +80,7 @@ export function newApartmentInput(partial: Partial<ApartmentInput> = {}): Apartm
     whatsapp: "",
     notes: "",
     appointmentAt: null,
+    photos: [],
     bedrooms: null,
     sizeSqm: null,
     ...partial,

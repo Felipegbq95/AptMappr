@@ -10,6 +10,7 @@ import {
   BedDouble,
   Ruler,
   Wallet,
+  Navigation,
 } from "lucide-react";
 import type { Apartment } from "@/lib/types";
 import { formatDateTime, formatPrice, normalizeUrl, whatsappLink } from "@/lib/utils";
@@ -42,6 +43,8 @@ export default function ApartmentDetail({
     `Hi! I'm interested in the apartment "${apartment.title}".`,
   );
   const listing = normalizeUrl(apartment.postingUrl);
+  const directions = `https://www.google.com/maps/dir/?api=1&destination=${apartment.lat},${apartment.lng}`;
+  const photos = apartment.photos ?? [];
 
   return (
     <div className="flex h-full flex-col">
@@ -63,6 +66,20 @@ export default function ApartmentDetail({
       </div>
 
       <div className="scroll-thin flex-1 space-y-4 overflow-y-auto p-4">
+        {photos.length > 0 && (
+          <div className="scroll-thin -mx-1 flex gap-2 overflow-x-auto pb-1">
+            {photos.map((p, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={`${p}-${i}`}
+                src={p}
+                alt={`${apartment.title} photo ${i + 1}`}
+                className="h-40 w-56 shrink-0 rounded-xl object-cover"
+              />
+            ))}
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-xl font-semibold leading-tight">{apartment.title}</h2>
@@ -98,6 +115,14 @@ export default function ApartmentDetail({
         )}
 
         <div className="flex flex-wrap gap-2">
+          <a
+            href={directions}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Navigation className="h-4 w-4" /> Directions
+          </a>
           {listing && (
             <a
               href={listing}

@@ -13,13 +13,18 @@ project.
 
 ## ✨ Features
 
+- **Mobile-first**: on a phone it's a full-screen map with a draggable bottom
+  sheet (like Airbnb/Zillow); on desktop it's a map + sidebar. Built for hunting
+  on the go.
 - **Interactive map** of every apartment, with pins color-coded by status
   (lead → contacted → scheduled → visited → favorite → rejected).
 - **Add apartments** by searching an address _or_ dropping a pin directly on the
   map (auto reverse-geocoded to an address).
+- **Photos** per apartment — upload from your device or paste image URLs, shown
+  as list thumbnails and a swipeable gallery.
 - **Rich detail per apartment**: monthly rent, bedrooms, size, notes, a link to
-  the original listing, a one-tap **WhatsApp** button, and a **viewing
-  appointment** date/time.
+  the original listing, a one-tap **WhatsApp** button, a **Directions**
+  (Google Maps) hand-off, and a **viewing appointment** date/time.
 - **Search & filter** by text and status.
 - **Route optimizer** — pick a set of apartments (or auto-pick everything with a
   viewing on a given day), optionally set a start point ("use my location"), and
@@ -62,6 +67,12 @@ in your browser. Great for trying it out or personal use on one device.
 
 5. Restart `npm run dev`. You'll now get a sign-in screen, and data syncs to the
    cloud.
+
+**To enable photo uploads** in cloud mode: in the Supabase dashboard go to
+**Storage → New bucket**, name it `apartment-photos`, and mark it **public**.
+The storage access policies are included at the bottom of
+[`supabase/schema.sql`](./supabase/schema.sql). (In local mode, photos are
+downscaled and stored in the browser automatically — no bucket needed.)
 
 **Email magic links** work out of the box. To enable **Google sign-in**, go to
 **Authentication → Providers → Google** in Supabase and follow the prompts
@@ -141,6 +152,7 @@ src/
 │   ├── ApartmentList.tsx
 │   ├── ApartmentDetail.tsx
 │   ├── ApartmentForm.tsx       # Add / edit modal
+│   ├── PhotoInput.tsx          # Upload / paste-URL photo manager
 │   ├── AddressSearch.tsx       # Debounced geocoding autocomplete
 │   ├── RoutePlanner.tsx        # Route optimization UI
 │   ├── StatusPill.tsx
@@ -149,6 +161,7 @@ src/
     ├── types.ts                # Domain model
     ├── storage.ts              # Local + Supabase adapters behind one interface
     ├── supabase.ts             # Browser Supabase client (null in local mode)
+    ├── photos.ts               # Photo upload (Storage) / downscale (local)
     ├── useApartments.ts        # Data hook (CRUD)
     ├── useAuth.ts              # Session hook
     ├── api.ts                  # Client helpers for geocode/optimize
