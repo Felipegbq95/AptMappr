@@ -25,7 +25,9 @@ project.
 - **Rich detail per apartment**: monthly rent, bedrooms, size, notes, a link to
   the original listing, a one-tap **WhatsApp** button, a **Directions**
   (Google Maps) hand-off, and a **viewing appointment** date/time.
-- **Search & filter** by text and status.
+- **Search, filter & sort** — free-text search, status chips, a rent range and
+  a minimum-bedrooms filter, and sorting by recently added, price, soonest
+  viewing, or name. The map always mirrors the filtered set.
 - **Commute anchors** — save the places that matter (work, gym, a friend's
   flat) and every apartment shows the **driving time and distance** to each,
   right in its detail panel. Answers the #1 question: "how far is it, really?"
@@ -161,6 +163,7 @@ src/
 │   ├── AddressSearch.tsx       # Debounced geocoding autocomplete
 │   ├── RoutePlanner.tsx        # Route optimization UI
 │   ├── PlacesPanel.tsx         # Manage commute anchors (work, gym, …)
+│   ├── FilterControls.tsx      # Search, status, sort, price/beds filters
 │   ├── StatusPill.tsx
 │   └── Auth.tsx                # Login screen + sign-out (cloud mode)
 └── lib/
@@ -169,6 +172,7 @@ src/
     ├── supabase.ts             # Browser Supabase client (null in local mode)
     ├── photos.ts               # Photo upload (Storage) / downscale (local)
     ├── commute.ts              # Cached commute-time lookups
+    ├── filter.ts               # Pure filter + sort logic for apartments
     ├── useApartments.ts        # Data hook (CRUD)
     ├── usePlaces.ts            # Places data hook
     ├── useAuth.ts              # Session hook

@@ -7,22 +7,22 @@ import {
   Plus,
   MapPin,
   Route as RouteIcon,
-  Search,
   Cloud,
   HardDrive,
   Loader2,
-  X,
   ChevronUp,
   ChevronDown,
   Building2,
 } from "lucide-react";
-import type { Apartment, ApartmentInput, ApartmentStatus, Place } from "@/lib/types";
-import { APARTMENT_STATUSES, STATUS_META, newApartmentInput } from "@/lib/types";
+import type { Apartment, ApartmentInput, Place } from "@/lib/types";
+import { newApartmentInput } from "@/lib/types";
 import { useApartments } from "@/lib/useApartments";
 import { usePlaces } from "@/lib/usePlaces";
 import { useAuth } from "@/lib/useAuth";
 import { reverseGeocode } from "@/lib/api";
 import { cn, hasCoords } from "@/lib/utils";
+import { defaultFilters, filterAndSortApartments } from "@/lib/filter";
+import type { Filters } from "@/lib/filter";
 import type { FocusTarget } from "./MapView";
 import type { RouteState } from "./RoutePlanner";
 import ApartmentList from "./ApartmentList";
@@ -30,6 +30,7 @@ import ApartmentDetail from "./ApartmentDetail";
 import ApartmentForm from "./ApartmentForm";
 import RoutePlanner from "./RoutePlanner";
 import PlacesPanel from "./PlacesPanel";
+import FilterControls from "./FilterControls";
 import { LoginScreen, SignOutButton } from "./Auth";
 
 // Leaflet only runs in the browser, so load the map with SSR disabled.
@@ -68,21 +69,12 @@ export default function AppShell() {
   // Mobile only: whether the bottom sheet is expanded (ignored on desktop).
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Set<ApartmentStatus>>(new Set());
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return apts.apartments.filter((a) => {
-      if (statusFilter.size && !statusFilter.has(a.status)) return false;
-      if (!q) return true;
-      return (
-        a.title.toLowerCase().includes(q) ||
-        a.address.toLowerCase().includes(q) ||
-        a.notes.toLowerCase().includes(q)
-      );
-    });
-  }, [apts.apartments, query, statusFilter]);
+  const filtered = useMemo(
+    () => filterAndSortApartments(apts.apartments, filters),
+    [apts.apartments, filters],
+  );
 
   const selected = useMemo(
     () => apts.apartments.find((a) => a.id === selectedId) ?? null,
@@ -176,15 +168,6 @@ export default function AppShell() {
     setView("list");
   }
 
-  function toggleStatusFilter(s: ApartmentStatus) {
-    setStatusFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(s)) next.delete(s);
-      else next.add(s);
-      return next;
-    });
-  }
-
   // ---- Render gates -------------------------------------------------------
   if (auth.cloud && auth.loading) {
     return (
@@ -232,8 +215,13 @@ export default function AppShell() {
           </span>
         </button>
 
-        {/* Brand + account */}
-        <div className="hidden items-center gap-2 border-b border-slate-100 px-4 py-3 md:flex">
+        {/* Brand + account (shown on mobile too in cloud mode so sign-out is reachable) */}
+        <div
+          className={cn(
+            "items-center gap-2 border-b border-slate-100 px-4 py-3",
+            auth.cloud ? "flex" : "hidden md:flex",
+          )}
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
             <MapPinned className="h-5 w-5" />
           </div>
@@ -341,46 +329,11 @@ export default function AppShell() {
             />
           ) : (
             <>
-              {/* Search + filters */}
-              <div className="space-y-2 border-b border-slate-100 px-3 py-3">
-                <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3">
-                  <Search className="h-4 w-4 text-slate-400" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search name, address, notes…"
-                    className="w-full bg-transparent py-2 text-sm outline-none"
-                  />
-                  {query && (
-                    <button onClick={() => setQuery("")} className="text-slate-400">
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="scroll-thin flex gap-1.5 overflow-x-auto pb-1">
-                  {APARTMENT_STATUSES.map((s) => {
-                    const active = statusFilter.has(s);
-                    const meta = STATUS_META[s];
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => toggleStatusFilter(s)}
-                        className={cn(
-                          "shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                          active ? "text-white" : "bg-white text-slate-600",
-                        )}
-                        style={
-                          active
-                            ? { backgroundColor: meta.color, borderColor: meta.color }
-                            : { borderColor: "#e2e8f0" }
-                        }
-                      >
-                        {meta.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <FilterControls
+                filters={filters}
+                setFilters={(updater) => setFilters(updater)}
+                onClear={() => setFilters(defaultFilters())}
+              />
 
               {/* List */}
               <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
