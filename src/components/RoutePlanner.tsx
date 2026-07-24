@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Route, LocateFixed, Loader2, X, Flag } from "lucide-react";
 import type { Apartment, OptimizedRoute } from "@/lib/types";
 import { optimizeRoute, reverseGeocode } from "@/lib/api";
-import { hasCoords, isoDay } from "@/lib/utils";
+import { hasCoords, isoDay, formatDistance, formatDuration } from "@/lib/utils";
+import type { Place } from "@/lib/types";
 
 const START_ID = "__start__";
 
@@ -16,23 +17,16 @@ export interface RouteState {
 
 interface RoutePlannerProps {
   apartments: Apartment[];
+  places: Place[];
   routeState: RouteState;
   setRouteState: (s: RouteState) => void;
   onBack: () => void;
   onSelectApartment: (id: string) => void;
 }
 
-function formatDistance(m: number): string {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
-}
-function formatDuration(s: number): string {
-  const mins = Math.round(s / 60);
-  if (mins < 60) return `${mins} min`;
-  return `${Math.floor(mins / 60)} h ${mins % 60} min`;
-}
-
 export default function RoutePlanner({
   apartments,
+  places,
   routeState,
   setRouteState,
   onBack,
@@ -172,6 +166,23 @@ export default function RoutePlanner({
                   </span>
                 )}
               </div>
+              {places.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {places.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        const s = { lat: p.lat, lng: p.lng, label: p.label || "Place" };
+                        setStart(s);
+                        setRouteState({ ...routeState, start: { lat: p.lat, lng: p.lng } });
+                      }}
+                      className="flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                    >
+                      <span>{p.icon}</span> {p.label || "Place"}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <label className="flex items-center gap-2 text-sm text-slate-700">

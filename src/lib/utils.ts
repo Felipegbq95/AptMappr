@@ -1,5 +1,3 @@
-import type { Apartment } from "./types";
-
 /** Tiny classnames helper (avoids a clsx dependency). */
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -71,6 +69,20 @@ export function fromLocalInputValue(value: string): string | null {
   return d.toISOString();
 }
 
+/** Human-readable distance from meters (e.g. "850 m", "3.2 km"). */
+export function formatDistance(meters: number | null): string {
+  if (meters === null || Number.isNaN(meters)) return "";
+  return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
+}
+
+/** Human-readable duration from seconds (e.g. "12 min", "1 h 5 min"). */
+export function formatDuration(seconds: number): string {
+  const mins = Math.round(seconds / 60);
+  if (mins < 1) return "<1 min";
+  if (mins < 60) return `${mins} min`;
+  return `${Math.floor(mins / 60)} h ${mins % 60} min`;
+}
+
 /** Haversine distance in kilometers, used for quick "nearby" hints. */
 export function haversineKm(a: [number, number], b: [number, number]): number {
   const R = 6371;
@@ -83,6 +95,10 @@ export function haversineKm(a: [number, number], b: [number, number]): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export function hasCoords(apt: Apartment): boolean {
-  return Number.isFinite(apt.lat) && Number.isFinite(apt.lng) && !(apt.lat === 0 && apt.lng === 0);
+export function hasCoords(item: { lat: number; lng: number }): boolean {
+  return (
+    Number.isFinite(item.lat) &&
+    Number.isFinite(item.lng) &&
+    !(item.lat === 0 && item.lng === 0)
+  );
 }

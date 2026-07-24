@@ -14,10 +14,12 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  Building2,
 } from "lucide-react";
-import type { Apartment, ApartmentInput, ApartmentStatus } from "@/lib/types";
+import type { Apartment, ApartmentInput, ApartmentStatus, Place } from "@/lib/types";
 import { APARTMENT_STATUSES, STATUS_META, newApartmentInput } from "@/lib/types";
 import { useApartments } from "@/lib/useApartments";
+import { usePlaces } from "@/lib/usePlaces";
 import { useAuth } from "@/lib/useAuth";
 import { reverseGeocode } from "@/lib/api";
 import { cn, hasCoords } from "@/lib/utils";
@@ -27,6 +29,7 @@ import ApartmentList from "./ApartmentList";
 import ApartmentDetail from "./ApartmentDetail";
 import ApartmentForm from "./ApartmentForm";
 import RoutePlanner from "./RoutePlanner";
+import PlacesPanel from "./PlacesPanel";
 import { LoginScreen, SignOutButton } from "./Auth";
 
 // Leaflet only runs in the browser, so load the map with SSR disabled.
@@ -39,7 +42,7 @@ const MapView = dynamic(() => import("./MapView"), {
   ),
 });
 
-type View = "list" | "detail" | "route";
+type View = "list" | "detail" | "route" | "places";
 
 interface FormState {
   mode: "add" | "edit";
@@ -53,6 +56,7 @@ export default function AppShell() {
   const auth = useAuth();
   const enabled = !auth.cloud || Boolean(auth.session);
   const apts = useApartments(enabled);
+  const placesApi = usePlaces(enabled);
 
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -91,13 +95,20 @@ export default function AppShell() {
   const sheetSummary =
     view === "route"
       ? "Route planner"
-      : view === "detail" && selected
-        ? selected.title || "Apartment"
-        : `${apts.apartments.length} apartment${apts.apartments.length === 1 ? "" : "s"}`;
+      : view === "places"
+        ? "Places & commutes"
+        : view === "detail" && selected
+          ? selected.title || "Apartment"
+          : `${apts.apartments.length} apartment${apts.apartments.length === 1 ? "" : "s"}`;
 
   function focusOn(apt: Apartment) {
     if (!hasCoords(apt)) return;
     setFocus({ lat: apt.lat, lng: apt.lng, nonce: Date.now() });
+  }
+
+  function focusPlace(place: Place) {
+    if (!hasCoords(place)) return;
+    setFocus({ lat: place.lat, lng: place.lng, nonce: Date.now() });
   }
 
   function handleSelect(id: string) {
@@ -248,7 +259,7 @@ export default function AppShell() {
         </div>
 
         {/* Primary actions */}
-        <div className="grid grid-cols-3 gap-2 border-b border-slate-100 px-3 py-3">
+        <div className="grid grid-cols-4 gap-2 border-b border-slate-100 px-3 py-3">
           <button
             onClick={openAdd}
             className="flex flex-col items-center gap-1 rounded-lg bg-brand-600 py-2 text-xs font-semibold text-white hover:bg-brand-700"
@@ -281,6 +292,21 @@ export default function AppShell() {
           >
             <RouteIcon className="h-4 w-4" /> Route
           </button>
+          <button
+            onClick={() => {
+              setView("places");
+              setSelectedId(null);
+              setSheetOpen(true);
+            }}
+            className={cn(
+              "flex flex-col items-center gap-1 rounded-lg border py-2 text-xs font-medium hover:bg-slate-50",
+              view === "places"
+                ? "border-brand-500 bg-brand-50 text-brand-700"
+                : "border-slate-200 text-slate-700",
+            )}
+          >
+            <Building2 className="h-4 w-4" /> Places
+          </button>
         </div>
 
         {/* Body */}
@@ -288,14 +314,27 @@ export default function AppShell() {
           {view === "route" ? (
             <RoutePlanner
               apartments={apts.apartments}
+              places={placesApi.places}
               routeState={routeState}
               setRouteState={setRouteState}
               onBack={() => setView("list")}
               onSelectApartment={handleSelect}
             />
+          ) : view === "places" ? (
+            <PlacesPanel
+              places={placesApi.places}
+              loading={placesApi.loading}
+              onCreate={async (input) => {
+                await placesApi.create(input);
+              }}
+              onRemove={placesApi.remove}
+              onBack={() => setView("list")}
+              onLocate={focusPlace}
+            />
           ) : view === "detail" && selected ? (
             <ApartmentDetail
               apartment={selected}
+              places={placesApi.places}
               onBack={() => setView("list")}
               onEdit={() => openEdit(selected)}
               onLocate={() => focusOn(selected)}
@@ -402,6 +441,7 @@ export default function AppShell() {
           routeGeometry={routeState.geometry}
           routeOrder={routeState.order}
           startPoint={routeState.start}
+          places={placesApi.places}
           focus={focus}
         />
       </main>

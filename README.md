@@ -26,10 +26,14 @@ project.
   the original listing, a one-tap **WhatsApp** button, a **Directions**
   (Google Maps) hand-off, and a **viewing appointment** date/time.
 - **Search & filter** by text and status.
+- **Commute anchors** — save the places that matter (work, gym, a friend's
+  flat) and every apartment shows the **driving time and distance** to each,
+  right in its detail panel. Answers the #1 question: "how far is it, really?"
 - **Route optimizer** — pick a set of apartments (or auto-pick everything with a
-  viewing on a given day), optionally set a start point ("use my location"), and
-  get the optimal visiting order drawn on the map with total distance and
-  driving time. Solves the travelling-salesman problem via OSRM's trip service.
+  viewing on a given day), optionally set a start point ("use my location" or one
+  of your saved places), and get the optimal visiting order drawn on the map with
+  total distance and driving time. Solves the travelling-salesman problem via
+  OSRM's trip service.
 - **Two storage modes, same code**:
   - **Local mode** (default): data lives in your browser — no accounts, no keys.
   - **Cloud mode**: add a Supabase project and it turns into a synced,
@@ -144,25 +148,29 @@ src/
 ├── app/
 │   ├── api/geocode/route.ts    # Address search + reverse geocode proxy
 │   ├── api/optimize/route.ts   # OSRM trip (TSP) route optimizer
+│   ├── api/commute/route.ts    # OSRM table (driving-time matrix)
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/
 │   ├── AppShell.tsx            # Top-level state + layout
-│   ├── MapView.tsx             # Leaflet map, pins, route polyline
+│   ├── MapView.tsx             # Leaflet map, pins, places, route polyline
 │   ├── ApartmentList.tsx
-│   ├── ApartmentDetail.tsx
+│   ├── ApartmentDetail.tsx     # Detail incl. photo gallery + commute times
 │   ├── ApartmentForm.tsx       # Add / edit modal
 │   ├── PhotoInput.tsx          # Upload / paste-URL photo manager
 │   ├── AddressSearch.tsx       # Debounced geocoding autocomplete
 │   ├── RoutePlanner.tsx        # Route optimization UI
+│   ├── PlacesPanel.tsx         # Manage commute anchors (work, gym, …)
 │   ├── StatusPill.tsx
 │   └── Auth.tsx                # Login screen + sign-out (cloud mode)
 └── lib/
     ├── types.ts                # Domain model
-    ├── storage.ts              # Local + Supabase adapters behind one interface
+    ├── storage.ts              # Local + Supabase adapters (apartments + places)
     ├── supabase.ts             # Browser Supabase client (null in local mode)
     ├── photos.ts               # Photo upload (Storage) / downscale (local)
+    ├── commute.ts              # Cached commute-time lookups
     ├── useApartments.ts        # Data hook (CRUD)
+    ├── usePlaces.ts            # Places data hook
     ├── useAuth.ts              # Session hook
     ├── api.ts                  # Client helpers for geocode/optimize
     └── utils.ts                # WhatsApp links, formatting, geo helpers

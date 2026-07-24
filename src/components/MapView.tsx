@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Apartment } from "@/lib/types";
+import type { Apartment, Place } from "@/lib/types";
 import { STATUS_META } from "@/lib/types";
 import { hasCoords } from "@/lib/utils";
 
@@ -34,6 +34,7 @@ interface MapViewProps {
   routeGeometry: [number, number][] | null;
   routeOrder: string[] | null;
   startPoint: { lat: number; lng: number } | null;
+  places: Place[];
   focus: FocusTarget | null;
 }
 
@@ -74,6 +75,15 @@ function homeIcon(): L.DivIcon {
       </svg></div>`,
     iconSize: [34, 46],
     iconAnchor: [17, 46],
+  });
+}
+
+function placeIcon(icon: string): L.DivIcon {
+  return L.divIcon({
+    className: "apt-pin",
+    html: `<div class="apt-pin-inner" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9999px;background:#0f172a;color:#fff;font-size:15px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)">${icon}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   });
 }
 
@@ -130,6 +140,7 @@ export default function MapView({
   routeGeometry,
   routeOrder,
   startPoint,
+  places,
   focus,
 }: MapViewProps) {
   const orderIndex = useMemo(() => {
@@ -172,6 +183,15 @@ export default function MapView({
           />
         );
       })}
+
+      {places.filter(hasCoords).map((place) => (
+        <Marker
+          key={place.id}
+          position={[place.lat, place.lng]}
+          icon={placeIcon(place.icon || "📍")}
+          title={place.label}
+        />
+      ))}
 
       {startPoint && <Marker position={[startPoint.lat, startPoint.lng]} icon={homeIcon()} />}
 

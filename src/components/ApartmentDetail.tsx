@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Pencil,
@@ -11,13 +12,24 @@ import {
   Ruler,
   Wallet,
   Navigation,
+  Loader2,
 } from "lucide-react";
-import type { Apartment } from "@/lib/types";
-import { formatDateTime, formatPrice, normalizeUrl, whatsappLink } from "@/lib/utils";
+import type { Apartment, Place } from "@/lib/types";
+import {
+  formatDateTime,
+  formatDistance,
+  formatDuration,
+  formatPrice,
+  hasCoords,
+  normalizeUrl,
+  whatsappLink,
+} from "@/lib/utils";
+import { commutesFor, type Commute } from "@/lib/commute";
 import StatusPill from "./StatusPill";
 
 interface ApartmentDetailProps {
   apartment: Apartment;
+  places: Place[];
   onBack: () => void;
   onEdit: () => void;
   onLocate: () => void;
@@ -34,10 +46,31 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
 
 export default function ApartmentDetail({
   apartment,
+  places,
   onBack,
   onEdit,
   onLocate,
 }: ApartmentDetailProps) {
+  const [commutes, setCommutes] = useState<Record<string, Commute | null>>({});
+  const [commuteLoading, setCommuteLoading] = useState(false);
+
+  const placeKey = places.map((p) => p.id).join(",");
+  useEffect(() => {
+    if (places.length === 0 || !hasCoords(apartment)) {
+      setCommutes({});
+      return;
+    }
+    let active = true;
+    setCommuteLoading(true);
+    commutesFor({ lat: apartment.lat, lng: apartment.lng }, places)
+      .then((res) => active && setCommutes(res))
+      .finally(() => active && setCommuteLoading(false));
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apartment.id, apartment.lat, apartment.lng, placeKey]);
+
   const wa = whatsappLink(
     apartment.whatsapp,
     `Hi! I'm interested in the apartment "${apartment.title}".`,
@@ -112,6 +145,47 @@ export default function ApartmentDetail({
           <Row icon={<CalendarClock className="h-4 w-4" />}>
             <span className="font-medium">Viewing:</span> {formatDateTime(apartment.appointmentAt)}
           </Row>
+        )}
+
+        {places.length > 0 && (
+          <div>
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+              Commute
+              {commuteLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+            </h3>
+            <ul className="space-y-1.5">
+              {places.map((p) => {
+                const c = commutes[p.id];
+                return (
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"
+                  >
+                    <span className="flex items-center gap-2 text-slate-700">
+                      <span>{p.icon}</span>
+                      <span className="truncate">{p.label || "Place"}</span>
+                    </span>
+                    <span className="shrink-0 text-slate-500">
+                      {c ? (
+                        <>
+                          <span className="font-semibold text-slate-700">
+                            {formatDuration(c.durationSeconds)}
+                          </span>
+                          {c.distanceMeters !== null && (
+                            <span className="ml-1 text-xs">· {formatDistance(c.distanceMeters)}</span>
+                          )}
+                        </>
+                      ) : commuteLoading ? (
+                        "…"
+                      ) : (
+                        "—"
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2">

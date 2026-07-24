@@ -51,6 +51,30 @@ export interface Apartment {
 
 export type ApartmentInput = Omit<Apartment, "id" | "createdAt" | "updatedAt">;
 
+/** Emoji presets for saved places (commute anchors). */
+export const PLACE_ICONS = ["🏢", "🏋️", "🚇", "🎓", "🏠", "❤️", "🛒", "📍"] as const;
+
+/**
+ * A saved location the user cares about (work, gym, a partner's flat…). Used to
+ * show commute times from each apartment.
+ */
+export interface Place {
+  id: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  icon: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PlaceInput = Omit<Place, "id" | "createdAt" | "updatedAt">;
+
+export function newPlaceInput(partial: Partial<PlaceInput> = {}): PlaceInput {
+  return { label: "", address: "", lat: 0, lng: 0, icon: "🏢", ...partial };
+}
+
 /** A geocoding search result. */
 export interface GeocodeResult {
   label: string;

@@ -73,6 +73,36 @@ alter table public.apartments
   add column if not exists photos text[] not null default '{}';
 
 -- ===========================================================================
+-- Places (commute anchors: work, gym, …) used to show travel times.
+-- ===========================================================================
+create table if not exists public.places (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  label       text not null default '',
+  address     text not null default '',
+  lat         double precision not null default 0,
+  lng         double precision not null default 0,
+  icon        text not null default '📍',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create index if not exists places_user_id_idx on public.places (user_id);
+
+drop trigger if exists places_set_updated_at on public.places;
+create trigger places_set_updated_at
+  before update on public.places
+  for each row execute function public.set_updated_at();
+
+alter table public.places enable row level security;
+
+drop policy if exists "own places – all" on public.places;
+create policy "own places – all"
+  on public.places for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ===========================================================================
 -- Storage: apartment photos (optional, enables photo uploads in cloud mode)
 --
 -- 1. In the Supabase dashboard: Storage → New bucket → name it

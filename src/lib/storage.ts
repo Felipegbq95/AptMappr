@@ -1,4 +1,4 @@
-import type { Apartment, ApartmentInput } from "./types";
+import type { Apartment, ApartmentInput, Place, PlaceInput } from "./types";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
 
 /**
@@ -178,4 +178,122 @@ export function getStore(): ApartmentStore {
     store = isSupabaseConfigured ? new SupabaseStore() : new LocalStore();
   }
   return store;
+}
+
+// --------------------------------------------------------------------------
+// Places (commute anchors) — same two-backend pattern as apartments.
+// --------------------------------------------------------------------------
+
+export interface PlaceStore {
+  list(): Promise<Place[]>;
+  create(input: PlaceInput): Promise<Place>;
+  update(id: string, patch: Partial<PlaceInput>): Promise<Place>;
+  remove(id: string): Promise<void>;
+}
+
+const PLACES_KEY = "aptmappr.places.v1";
+
+class LocalPlaceStore implements PlaceStore {
+  private read(): Place[] {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(PLACES_KEY);
+      return raw ? (JSON.parse(raw) as Place[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  private write(items: Place[]) {
+    window.localStorage.setItem(PLACES_KEY, JSON.stringify(items));
+  }
+  async list(): Promise<Place[]> {
+    return this.read().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+  async create(input: PlaceInput): Promise<Place> {
+    const now = new Date().toISOString();
+    const place: Place = { ...input, id: uid(), createdAt: now, updatedAt: now };
+    const items = this.read();
+    items.push(place);
+    this.write(items);
+    return place;
+  }
+  async update(id: string, patch: Partial<PlaceInput>): Promise<Place> {
+    const items = this.read();
+    const idx = items.findIndex((p) => p.id === id);
+    if (idx === -1) throw new Error("Place not found");
+    const updated: Place = { ...items[idx], ...patch, updatedAt: new Date().toISOString() };
+    items[idx] = updated;
+    this.write(items);
+    return updated;
+  }
+  async remove(id: string): Promise<void> {
+    this.write(this.read().filter((p) => p.id !== id));
+  }
+}
+
+function rowToPlace(row: Record<string, any>): Place {
+  return {
+    id: row.id,
+    label: row.label ?? "",
+    address: row.address ?? "",
+    lat: Number(row.lat),
+    lng: Number(row.lng),
+    icon: row.icon ?? "📍",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+class SupabasePlaceStore implements PlaceStore {
+  private client() {
+    const c = getSupabase();
+    if (!c) throw new Error("Supabase is not configured");
+    return c;
+  }
+  private async userId(): Promise<string> {
+    const { data } = await this.client().auth.getUser();
+    if (!data.user) throw new Error("Not signed in");
+    return data.user.id;
+  }
+  async list(): Promise<Place[]> {
+    const { data, error } = await this.client()
+      .from("places")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToPlace);
+  }
+  async create(input: PlaceInput): Promise<Place> {
+    const userId = await this.userId();
+    const { data, error } = await this.client()
+      .from("places")
+      .insert({ ...input, user_id: userId })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return rowToPlace(data);
+  }
+  async update(id: string, patch: Partial<PlaceInput>): Promise<Place> {
+    const { data, error } = await this.client()
+      .from("places")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return rowToPlace(data);
+  }
+  async remove(id: string): Promise<void> {
+    const { error } = await this.client().from("places").delete().eq("id", id);
+    if (error) throw error;
+  }
+}
+
+let placeStore: PlaceStore | null = null;
+
+export function getPlaceStore(): PlaceStore {
+  if (!placeStore) {
+    placeStore = isSupabaseConfigured ? new SupabasePlaceStore() : new LocalPlaceStore();
+  }
+  return placeStore;
 }
