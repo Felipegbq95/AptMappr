@@ -33,9 +33,10 @@ project.
   right in its detail panel. Answers the #1 question: "how far is it, really?"
 - **Route optimizer** — pick a set of apartments (or auto-pick everything with a
   viewing on a given day), optionally set a start point ("use my location" or one
-  of your saved places), and get the optimal visiting order drawn on the map with
-  total distance and driving time. Solves the travelling-salesman problem via
-  OSRM's trip service.
+  of your saved places) and a day start-time, and get the optimal visiting order
+  drawn on the map with **per-stop arrival times (ETAs)** and total distance/time.
+  Solves the travelling-salesman problem via OSRM's trip service. One tap opens
+  the **whole route in Google Maps** for turn-by-turn navigation.
 - **Two storage modes, same code**:
   - **Local mode** (default): data lives in your browser — no accounts, no keys.
   - **Cloud mode**: add a Supabase project and it turns into a synced,

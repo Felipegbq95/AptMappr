@@ -84,10 +84,12 @@ export interface GeocodeResult {
 
 /** An optimized viewing route returned by the route optimizer. */
 export interface OptimizedRoute {
-  /** Apartment ids in the order they should be visited. */
+  /** Stop ids in the order they should be visited (may include a start marker). */
   order: string[];
   /** GeoJSON-style [lng, lat] coordinates of the road-following polyline. */
   geometry: [number, number][];
+  /** Per-leg distance/duration, aligned so legs[k] connects order[k] → order[k+1]. */
+  legs: { distanceMeters: number; durationSeconds: number }[];
   distanceMeters: number;
   durationSeconds: number;
 }

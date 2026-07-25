@@ -18,6 +18,7 @@ interface OsrmTripResponse {
     distance: number;
     duration: number;
     geometry: { coordinates: [number, number][] };
+    legs?: Array<{ distance: number; duration: number }>;
   }>;
   waypoints?: Array<{ waypoint_index: number }>;
 }
@@ -82,6 +83,10 @@ export async function POST(request: Request) {
     const result: OptimizedRoute = {
       order,
       geometry: trip.geometry.coordinates,
+      legs: (trip.legs ?? []).map((l) => ({
+        distanceMeters: l.distance,
+        durationSeconds: l.duration,
+      })),
       distanceMeters: trip.distance,
       durationSeconds: trip.duration,
     };

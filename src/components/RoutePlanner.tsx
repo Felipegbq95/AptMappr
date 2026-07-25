@@ -1,10 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Route, LocateFixed, Loader2, X, Flag } from "lucide-react";
+import { ArrowLeft, Route, LocateFixed, Loader2, X, Flag, Navigation, Clock } from "lucide-react";
 import type { Apartment, OptimizedRoute } from "@/lib/types";
 import { optimizeRoute, reverseGeocode } from "@/lib/api";
-import { hasCoords, isoDay, formatDistance, formatDuration } from "@/lib/utils";
+import {
+  hasCoords,
+  isoDay,
+  formatDistance,
+  formatDuration,
+  googleMapsRouteUrl,
+} from "@/lib/utils";
 import type { Place } from "@/lib/types";
 
 const START_ID = "__start__";
@@ -41,6 +47,7 @@ export default function RoutePlanner({
     routeState.start ? { ...routeState.start, label: "Start point" } : null,
   );
   const [day, setDay] = useState("");
+  const [departure, setDeparture] = useState("");
   const [result, setResult] = useState<OptimizedRoute | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +59,45 @@ export default function RoutePlanner({
       .map((id) => mappable.find((a) => a.id === id))
       .filter((a): a is Apartment => Boolean(a));
   }, [result, mappable]);
+
+  // Cumulative arrival time (seconds from departure) for each stop id, using the
+  // per-leg durations. legs[k] connects order[k] → order[k+1].
+  const arrivalById = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!result) return map;
+    let acc = 0;
+    result.order.forEach((id, i) => {
+      if (i > 0) acc += result.legs[i - 1]?.durationSeconds ?? 0;
+      map.set(id, acc);
+    });
+    return map;
+  }, [result]);
+
+  function arrivalLabel(id: string): string {
+    const secs = arrivalById.get(id);
+    if (secs === undefined) return "";
+    if (departure) {
+      const [h, m] = departure.split(":").map(Number);
+      const d = new Date();
+      d.setHours(h || 0, m || 0, 0, 0);
+      d.setSeconds(d.getSeconds() + secs);
+      return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    }
+    return secs === 0 ? "start" : `+${formatDuration(secs)}`;
+  }
+
+  // Coordinates in visiting order, for the Google Maps hand-off.
+  const googleUrl = useMemo(() => {
+    if (!result) return null;
+    const seq = result.order
+      .map((id) => {
+        if (id === START_ID) return start ? { lat: start.lat, lng: start.lng } : null;
+        const apt = mappable.find((a) => a.id === id);
+        return apt ? { lat: apt.lat, lng: apt.lng } : null;
+      })
+      .filter((p): p is { lat: number; lng: number } => Boolean(p));
+    return googleMapsRouteUrl(seq, roundTrip);
+  }, [result, mappable, start, roundTrip]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -185,15 +231,27 @@ export default function RoutePlanner({
               )}
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={roundTrip}
-                onChange={(e) => setRoundTrip(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-brand-600"
-              />
-              Return to the start (round trip)
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={roundTrip}
+                  onChange={(e) => setRoundTrip(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-brand-600"
+                />
+                Round trip
+              </label>
+              <label className="flex items-center gap-1.5 text-sm text-slate-600">
+                <Clock className="h-4 w-4 text-slate-400" />
+                <span className="text-xs">Start</span>
+                <input
+                  type="time"
+                  value={departure}
+                  onChange={(e) => setDeparture(e.target.value)}
+                  className="rounded-lg border border-slate-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
+                />
+              </label>
+            </div>
 
             <div className="space-y-1">
               <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -275,11 +333,12 @@ export default function RoutePlanner({
                 </div>
                 <ol className="space-y-1">
                   {start && (
-                    <li className="flex items-center gap-2 text-sm text-slate-500">
+                    <li className="flex items-center gap-2 px-1 py-1 text-sm text-slate-500">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white">
                         <Flag className="h-3 w-3" />
                       </span>
-                      Start
+                      <span className="flex-1">Start</span>
+                      <span className="shrink-0 text-xs">{arrivalLabel(START_ID)}</span>
                     </li>
                   )}
                   {orderedApartments.map((a, i) => (
@@ -291,11 +350,27 @@ export default function RoutePlanner({
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
                           {i + 1}
                         </span>
-                        <span className="truncate text-slate-700">{a.title || "Untitled"}</span>
+                        <span className="flex-1 truncate text-slate-700">
+                          {a.title || "Untitled"}
+                        </span>
+                        <span className="shrink-0 text-xs font-medium text-slate-500">
+                          {arrivalLabel(a.id)}
+                        </span>
                       </button>
                     </li>
                   ))}
                 </ol>
+
+                {googleUrl && (
+                  <a
+                    href={googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    <Navigation className="h-4 w-4" /> Open route in Google Maps
+                  </a>
+                )}
               </div>
             )}
           </>

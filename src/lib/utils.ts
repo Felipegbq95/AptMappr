@@ -69,6 +69,30 @@ export function fromLocalInputValue(value: string): string | null {
   return d.toISOString();
 }
 
+/**
+ * Build a Google Maps directions URL for a multi-stop route (in visiting
+ * order) so the user can navigate the whole day on their phone. When roundTrip
+ * is true the route returns to the first stop.
+ */
+export function googleMapsRouteUrl(
+  seq: { lat: number; lng: number }[],
+  roundTrip: boolean,
+): string | null {
+  if (seq.length < 2) return null;
+  const c = (p: { lat: number; lng: number }) => `${p.lat},${p.lng}`;
+  const origin = seq[0];
+  const destination = roundTrip ? seq[0] : seq[seq.length - 1];
+  const middle = roundTrip ? seq.slice(1) : seq.slice(1, -1);
+  const params = new URLSearchParams({
+    api: "1",
+    origin: c(origin),
+    destination: c(destination),
+    travelmode: "driving",
+  });
+  if (middle.length > 0) params.set("waypoints", middle.map(c).join("|"));
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
 /** Human-readable distance from meters (e.g. "850 m", "3.2 km"). */
 export function formatDistance(meters: number | null): string {
   if (meters === null || Number.isNaN(meters)) return "";
