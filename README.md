@@ -13,6 +13,8 @@ project.
 
 ## ✨ Features
 
+- **Installable app (PWA)**: add it to your phone's home screen — it launches
+  full-screen with its own app icon, and the app shell keeps working offline.
 - **Mobile-first**: on a phone it's a full-screen map with a draggable bottom
   sheet (like Airbnb/Zillow); on desktop it's a map + sidebar. Built for hunting
   on the go.
@@ -57,6 +59,14 @@ npm run dev
 
 Open <http://localhost:3000>. That's it — add apartments and everything is saved
 in your browser. Great for trying it out or personal use on one device.
+
+### 📲 Install it on your phone
+
+AptMappr is a PWA. Once it's deployed (or running over HTTPS), open it in your
+phone's browser and choose **"Add to Home Screen"** (or tap the in-app **Install**
+prompt on Android/Chrome). It then behaves like a native app — full-screen, with
+its own icon, and the shell loads even without a connection. Service-worker
+offline support is enabled in production builds only.
 
 ---
 
@@ -156,6 +166,7 @@ src/
 │   ├── api/geocode/route.ts    # Address search + reverse geocode proxy
 │   ├── api/optimize/route.ts   # OSRM trip (TSP) route optimizer
 │   ├── api/commute/route.ts    # OSRM table (driving-time matrix)
+│   ├── manifest.ts             # PWA web app manifest
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/
@@ -170,6 +181,8 @@ src/
 │   ├── PlacesPanel.tsx         # Manage commute anchors (work, gym, …)
 │   ├── FilterControls.tsx      # Search, status, sort, price/beds filters
 │   ├── BackupModal.tsx         # Export / import (JSON + CSV)
+│   ├── InstallPrompt.tsx       # PWA "add to home screen" banner
+│   ├── PwaRegister.tsx         # Service-worker registration
 │   ├── StatusPill.tsx
 │   └── Auth.tsx                # Login screen + sign-out (cloud mode)
 └── lib/

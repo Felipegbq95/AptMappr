@@ -33,6 +33,7 @@ import RoutePlanner from "./RoutePlanner";
 import PlacesPanel from "./PlacesPanel";
 import FilterControls from "./FilterControls";
 import BackupModal from "./BackupModal";
+import InstallPrompt from "./InstallPrompt";
 import { LoginScreen, SignOutButton } from "./Auth";
 
 // Leaflet only runs in the browser, so load the map with SSR disabled.
@@ -210,6 +211,7 @@ export default function AppShell() {
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden md:flex">
+      <InstallPrompt />
       {/* Panel: bottom sheet on mobile, left column on desktop */}
       <aside
         className={cn(
