@@ -37,6 +37,10 @@ project.
   drawn on the map with **per-stop arrival times (ETAs)** and total distance/time.
   Solves the travelling-salesman problem via OSRM's trip service. One tap opens
   the **whole route in Google Maps** for turn-by-turn navigation.
+- **Backup, export & import** — download a full **JSON backup** (apartments,
+  places, photos and all) or a spreadsheet-friendly **CSV** of your apartments,
+  and import either back later. Peace of mind, and an easy way to move between
+  local and cloud mode.
 - **Two storage modes, same code**:
   - **Local mode** (default): data lives in your browser — no accounts, no keys.
   - **Cloud mode**: add a Supabase project and it turns into a synced,
@@ -165,6 +169,7 @@ src/
 │   ├── RoutePlanner.tsx        # Route optimization UI
 │   ├── PlacesPanel.tsx         # Manage commute anchors (work, gym, …)
 │   ├── FilterControls.tsx      # Search, status, sort, price/beds filters
+│   ├── BackupModal.tsx         # Export / import (JSON + CSV)
 │   ├── StatusPill.tsx
 │   └── Auth.tsx                # Login screen + sign-out (cloud mode)
 └── lib/
@@ -174,6 +179,7 @@ src/
     ├── photos.ts               # Photo upload (Storage) / downscale (local)
     ├── commute.ts              # Cached commute-time lookups
     ├── filter.ts               # Pure filter + sort logic for apartments
+    ├── backup.ts               # JSON/CSV export + import parsing
     ├── useApartments.ts        # Data hook (CRUD)
     ├── usePlaces.ts            # Places data hook
     ├── useAuth.ts              # Session hook

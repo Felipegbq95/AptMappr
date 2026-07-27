@@ -13,6 +13,7 @@ import {
   ChevronUp,
   ChevronDown,
   Building2,
+  Download,
 } from "lucide-react";
 import type { Apartment, ApartmentInput, Place } from "@/lib/types";
 import { newApartmentInput } from "@/lib/types";
@@ -31,6 +32,7 @@ import ApartmentForm from "./ApartmentForm";
 import RoutePlanner from "./RoutePlanner";
 import PlacesPanel from "./PlacesPanel";
 import FilterControls from "./FilterControls";
+import BackupModal from "./BackupModal";
 import { LoginScreen, SignOutButton } from "./Auth";
 
 // Leaflet only runs in the browser, so load the map with SSR disabled.
@@ -68,6 +70,7 @@ export default function AppShell() {
   const [routeState, setRouteState] = useState<RouteState>(emptyRoute);
   // Mobile only: whether the bottom sheet is expanded (ignored on desktop).
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
 
   const [filters, setFilters] = useState<Filters>(defaultFilters);
 
@@ -166,6 +169,31 @@ export default function AppShell() {
     setForm(null);
     setSelectedId(null);
     setView("list");
+  }
+
+  async function handleImport(result: {
+    apartments: ApartmentInput[];
+    places: Parameters<typeof placesApi.create>[0][];
+  }) {
+    let aptCount = 0;
+    let placeCount = 0;
+    for (const a of result.apartments) {
+      try {
+        await apts.create(a);
+        aptCount += 1;
+      } catch {
+        /* skip bad row */
+      }
+    }
+    for (const p of result.places) {
+      try {
+        await placesApi.create(p);
+        placeCount += 1;
+      } catch {
+        /* skip bad row */
+      }
+    }
+    return { aptCount, placeCount };
   }
 
   // ---- Render gates -------------------------------------------------------
@@ -361,8 +389,16 @@ export default function AppShell() {
                 )}
               </div>
 
-              <div className="border-t border-slate-100 px-4 py-2 text-center text-[11px] text-slate-400">
-                {apts.apartments.length} saved · {filtered.length} shown
+              <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">
+                <span>
+                  {apts.apartments.length} saved · {filtered.length} shown
+                </span>
+                <button
+                  onClick={() => setShowBackup(true)}
+                  className="flex items-center gap-1 font-medium text-slate-500 hover:text-slate-700"
+                >
+                  <Download className="h-3 w-3" /> Backup / export
+                </button>
               </div>
             </>
           )}
@@ -411,6 +447,15 @@ export default function AppShell() {
           onDelete={
             form.mode === "edit" && selected ? () => handleDelete(selected) : undefined
           }
+        />
+      )}
+
+      {showBackup && (
+        <BackupModal
+          apartments={apts.apartments}
+          places={placesApi.places}
+          onImport={handleImport}
+          onClose={() => setShowBackup(false)}
         />
       )}
     </div>
