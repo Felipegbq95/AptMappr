@@ -30,6 +30,9 @@ project.
 - **Search, filter & sort** — free-text search, status chips, a rent range and
   a minimum-bedrooms filter, and sorting by recently added, price, soonest
   viewing, or name. The map always mirrors the filtered set.
+- **Agenda + calendar export** — all your viewings grouped by day (Today /
+  Tomorrow / date). Add any single viewing, or all of them at once, to
+  Google/Apple/Outlook Calendar with a one-tap **`.ics`** download.
 - **Commute anchors** — save the places that matter (work, gym, a friend's
   flat) and every apartment shows the **driving time and distance** to each,
   right in its detail panel. Answers the #1 question: "how far is it, really?"
@@ -179,6 +182,7 @@ src/
 │   ├── AddressSearch.tsx       # Debounced geocoding autocomplete
 │   ├── RoutePlanner.tsx        # Route optimization UI
 │   ├── PlacesPanel.tsx         # Manage commute anchors (work, gym, …)
+│   ├── AgendaPanel.tsx         # Viewings grouped by day + .ics export
 │   ├── FilterControls.tsx      # Search, status, sort, price/beds filters
 │   ├── BackupModal.tsx         # Export / import (JSON + CSV)
 │   ├── InstallPrompt.tsx       # PWA "add to home screen" banner
@@ -193,6 +197,7 @@ src/
     ├── commute.ts              # Cached commute-time lookups
     ├── filter.ts               # Pure filter + sort logic for apartments
     ├── backup.ts               # JSON/CSV export + import parsing
+    ├── ics.ts                  # iCalendar (.ics) generation for viewings
     ├── useApartments.ts        # Data hook (CRUD)
     ├── usePlaces.ts            # Places data hook
     ├── useAuth.ts              # Session hook

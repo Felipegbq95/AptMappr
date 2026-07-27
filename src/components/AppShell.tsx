@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Building2,
   Download,
+  CalendarDays,
 } from "lucide-react";
 import type { Apartment, ApartmentInput, Place } from "@/lib/types";
 import { newApartmentInput } from "@/lib/types";
@@ -31,6 +32,7 @@ import ApartmentDetail from "./ApartmentDetail";
 import ApartmentForm from "./ApartmentForm";
 import RoutePlanner from "./RoutePlanner";
 import PlacesPanel from "./PlacesPanel";
+import AgendaPanel from "./AgendaPanel";
 import FilterControls from "./FilterControls";
 import BackupModal from "./BackupModal";
 import InstallPrompt from "./InstallPrompt";
@@ -46,7 +48,7 @@ const MapView = dynamic(() => import("./MapView"), {
   ),
 });
 
-type View = "list" | "detail" | "route" | "places";
+type View = "list" | "detail" | "route" | "places" | "agenda";
 
 interface FormState {
   mode: "add" | "edit";
@@ -93,7 +95,9 @@ export default function AppShell() {
       ? "Route planner"
       : view === "places"
         ? "Places & commutes"
-        : view === "detail" && selected
+        : view === "agenda"
+          ? "Agenda"
+          : view === "detail" && selected
           ? selected.title || "Apartment"
           : `${apts.apartments.length} apartment${apts.apartments.length === 1 ? "" : "s"}`;
 
@@ -277,7 +281,7 @@ export default function AppShell() {
         </div>
 
         {/* Primary actions */}
-        <div className="grid grid-cols-4 gap-2 border-b border-slate-100 px-3 py-3">
+        <div className="grid grid-cols-5 gap-1.5 border-b border-slate-100 px-3 py-3">
           <button
             onClick={openAdd}
             className="flex flex-col items-center gap-1 rounded-lg bg-brand-600 py-2 text-xs font-semibold text-white hover:bg-brand-700"
@@ -325,6 +329,21 @@ export default function AppShell() {
           >
             <Building2 className="h-4 w-4" /> Places
           </button>
+          <button
+            onClick={() => {
+              setView("agenda");
+              setSelectedId(null);
+              setSheetOpen(true);
+            }}
+            className={cn(
+              "flex flex-col items-center gap-1 rounded-lg border py-2 text-xs font-medium hover:bg-slate-50",
+              view === "agenda"
+                ? "border-brand-500 bg-brand-50 text-brand-700"
+                : "border-slate-200 text-slate-700",
+            )}
+          >
+            <CalendarDays className="h-4 w-4" /> Agenda
+          </button>
         </div>
 
         {/* Body */}
@@ -337,6 +356,12 @@ export default function AppShell() {
               setRouteState={setRouteState}
               onBack={() => setView("list")}
               onSelectApartment={handleSelect}
+            />
+          ) : view === "agenda" ? (
+            <AgendaPanel
+              apartments={apts.apartments}
+              onBack={() => setView("list")}
+              onSelect={handleSelect}
             />
           ) : view === "places" ? (
             <PlacesPanel

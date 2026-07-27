@@ -13,6 +13,7 @@ import {
   Wallet,
   Navigation,
   Loader2,
+  CalendarPlus,
 } from "lucide-react";
 import type { Apartment, Place } from "@/lib/types";
 import {
@@ -25,6 +26,8 @@ import {
   whatsappLink,
 } from "@/lib/utils";
 import { commutesFor, type Commute } from "@/lib/commute";
+import { buildSingleEvent, icsFilename } from "@/lib/ics";
+import { downloadTextFile } from "@/lib/backup";
 import StatusPill from "./StatusPill";
 
 interface ApartmentDetailProps {
@@ -142,9 +145,24 @@ export default function ApartmentDetail({
         </div>
 
         {apartment.appointmentAt && (
-          <Row icon={<CalendarClock className="h-4 w-4" />}>
-            <span className="font-medium">Viewing:</span> {formatDateTime(apartment.appointmentAt)}
-          </Row>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Row icon={<CalendarClock className="h-4 w-4" />}>
+              <span className="font-medium">Viewing:</span>{" "}
+              {formatDateTime(apartment.appointmentAt)}
+            </Row>
+            <button
+              onClick={() =>
+                downloadTextFile(
+                  icsFilename(apartment),
+                  buildSingleEvent(apartment),
+                  "text/calendar",
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <CalendarPlus className="h-3.5 w-3.5" /> Add to calendar
+            </button>
+          </div>
         )}
 
         {places.length > 0 && (

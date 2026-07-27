@@ -47,6 +47,32 @@ export function isoDay(iso: string | null): string | null {
   return iso.slice(0, 10);
 }
 
+/** Local YYYY-MM-DD for a Date (respects the user's timezone). */
+export function localDayKey(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Just the time, e.g. "09:30". */
+export function formatTime(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Friendly day heading: "Today", "Tomorrow", or e.g. "Monday, Jul 27". */
+export function formatDayLabel(dayKey: string): string {
+  const now = new Date();
+  const today = localDayKey(now);
+  const tomorrow = localDayKey(new Date(now.getTime() + 86400000));
+  if (dayKey === today) return "Today";
+  if (dayKey === tomorrow) return "Tomorrow";
+  const d = new Date(`${dayKey}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return dayKey;
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+}
+
 /**
  * Convert an ISO string to the value format required by
  * <input type="datetime-local"> (local time, no seconds/zone).
